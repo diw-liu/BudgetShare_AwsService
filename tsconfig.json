@@ -6,6 +6,8 @@
       "es2020",
       "dom"
     ],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "declaration": true,
     "strict": true,
     "noImplicitAny": true,
