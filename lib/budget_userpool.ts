@@ -19,16 +19,19 @@ export class BudgetUserpool extends Construct {
         })
         
         const usersTable = dynamodb.Table.fromTableName(this, 'UsersTable', props.userTable);
+        const booksTable = dynamodb.Table.fromTableName(this, 'BooksTable', props.booksTable);
 
         const postconHandler = new lambda.Function(this, "PostconHandler", {
             runtime: lambda.Runtime.PYTHON_3_7,
             code: lambda.Code.fromAsset("resources"),
             handler: "signing.postcon_handler",
             environment: {
-                TABLE_NAME: usersTable.tableName
+                USERS_TABLE_NAME: usersTable.tableName,
+                BOOKS_TABLE_NAME: booksTable.tableName
             }
         })
 
+        booksTable.grantReadWriteData(postconHandler)
         usersTable.grantReadWriteData(postconHandler)
 
         this.userpool = new cognito.UserPool(this, 'BudgetUserPool', {

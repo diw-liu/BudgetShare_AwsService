@@ -1,5 +1,6 @@
 import boto3
 import os
+import time 
 
 client = boto3.client('cognito-idp')
 dynamodb = boto3.client('dynamodb')
@@ -16,14 +17,30 @@ def signup_handler(event, context):
     return event
 
 def postcon_handler(event, context):
-    print(event)
-    response = dynamodb.put_item(
-        TableName= os.getenv("TABLE_NAME"),
-        Item={
-            'UserName' : {
-                'S' : event['userName']
-            }, 
-        }
-    )
-    print(response)
+    # print(event)
+    try:
+        response = dynamodb.put_item(
+            TableName= os.getenv("USERS_TABLE_NAME"),
+            Item={
+                'UserName' : {
+                    'S' : event['userName']
+                }, 
+            }
+        )
+        # print(response)
+        if(response['ResponseMetadata']['HTTPStatusCode'] == 200):
+            response = dynamodb.put_item(
+                TableName = os.getenv("BOOKS_TABLE_NAME"),
+                Item = {
+                    'Owner' : {
+                        'S' : event['userName']
+                    },
+                    'Time' : {
+                        'S' : time.strftime("%m/%Y") 
+                    }
+                }
+            )
+    except Exception as e:
+        raise e
+    # print(response)
     return event
