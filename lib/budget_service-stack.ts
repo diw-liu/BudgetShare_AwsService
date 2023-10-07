@@ -13,13 +13,24 @@ export class BudgetServiceStack extends cdk.Stack {
         userTable: budgetDynamo.usersTableName,
         booksTable: budgetDynamo.booksTableName
     });
-    new budget_service.BudgetService(this, 'Budget', {
-        booksTable: budgetDynamo.booksTableName
+    const budgetService = new budget_service.BudgetService(this, 'Budget', {
+        userTable: budgetDynamo.usersTableName,
+        booksTable: budgetDynamo.booksTableName,
+        userpool: budgetUserpool.userpool
     });
     // The code that defines your stack goes here
 
-    new cdk.CfnOutput(this, 'BudgetUserpool', {value: budgetUserpool.userpool.userPoolId});
-    new cdk.CfnOutput(this, 'BudgetApps', {value:budgetUserpool.client.userPoolClientId})
+    new cdk.CfnOutput(this, 'BudgetUserpool', {
+      value: budgetUserpool.userpool.userPoolId
+    });
+    
+    new cdk.CfnOutput(this, 'BudgetApps', {
+      value: budgetUserpool.client.userPoolClientId
+    })
+
+    new cdk.CfnOutput(this, "BudgetAppSync", {
+      value: budgetService.sourceApi.graphqlUrl
+    });
     // example resource
     // const queue = new sqs.Queue(this, 'BudgetServiceQueue', {
     //   visibilityTimeout: cdk.Duration.seconds(300)

@@ -17,7 +17,6 @@ def signup_handler(event, context):
     return event
 
 def postcon_handler(event, context):
-    # print(event)
     try:
         response = dynamodb.put_item(
             TableName= os.getenv("USERS_TABLE_NAME"),
@@ -27,7 +26,6 @@ def postcon_handler(event, context):
                 }, 
             }
         )
-        # print(response)
         if(response['ResponseMetadata']['HTTPStatusCode'] == 200):
             response = dynamodb.put_item(
                 TableName = os.getenv("BOOKS_TABLE_NAME"),
@@ -42,5 +40,4 @@ def postcon_handler(event, context):
             )
     except Exception as e:
         raise e
-    # print(response)
     return event

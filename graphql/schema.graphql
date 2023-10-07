@@ -1,0 +1,22 @@
+type user {
+    UserName: String!
+    Friends: [String!]
+}
+type book {
+    Owner: String!
+    Time: String!
+    Editors: [String!]
+}
+type transaction {
+    Book: String!
+    Time: String!
+    Title: String!
+    Amount: Int!
+}
+type Query {
+    getTimes: [String!] 
+}
+
+type Mutation {
+
+}
