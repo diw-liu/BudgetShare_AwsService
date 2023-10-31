@@ -34,7 +34,7 @@ def postcon_handler(event, context):
                         'S' : event['userName']
                     },
                     'Time' : {
-                        'S' : time.strftime("%m/%Y") 
+                        'S' : time.strftime("%Y-%m") 
                     }
                 }
             )
