@@ -1,22 +1,37 @@
-type user {
-    UserName: String!
+type User {
+    Username: String!
     Friends: [String!]
 }
-type book {
-    Owner: String!
+type Book {
+    Master: String!
     Time: String!
     Editors: [String!]
 }
-type transaction {
-    Book: String!
-    Time: String!
-    Title: String!
-    Amount: Int!
+type TimesOutput{
+  Time: String!
 }
+type TransactionOutput {
+    Time: String!
+    CatergoryId: String!
+    Title: String!
+    Amount: String!
+    Description: String!
+}
+
+input TransactionInput {
+    BookId: String!
+    Time: String!
+    CatergoryId: String!
+    Title: String!
+    Amount: String!
+    Description: String!
+}
+
 type Query {
-    getTimes: [String!] 
+    getTimes: [TimesOutput]
+    getTransaction(bookId: String!): [TransactionOutput]
 }
 
 type Mutation {
-
+    postTransaction(transaction: TransactionInput!): String!
 }

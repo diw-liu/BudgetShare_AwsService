@@ -1,7 +1,6 @@
 import { Construct } from "constructs";
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from "aws-cdk-lib/aws-lambda";
-import * as apigateway from "aws-cdk-lib/aws-apigateway"
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb"
 import * as appsync from 'aws-cdk-lib/aws-appsync';
 import path from "path";
@@ -28,23 +27,27 @@ export class BudgetService extends Construct {
 
         const usersTable = dynamodb.Table.fromTableName(this, 'UsersTable', props.userTable);
         const booksTable = dynamodb.Table.fromTableName(this, 'BooksTable', props.booksTable);
+        const transTable = dynamodb.Table.fromTableName(this, 'TransTable', props.transactionTable);
 
         const budgetLambda = new lambda.Function(this, 'BudgetSyncHandler', {
-            runtime: lambda.Runtime.PYTHON_3_7,
+            runtime: lambda.Runtime.PYTHON_3_10,
             handler: 'main.lambda_handler',
             code: lambda.Code.fromAsset('resources'),
             memorySize: 1024,
             environment: {
                 USERS_TABLE_NAME: usersTable.tableName,
-                BOOKS_TABLE_NAME: booksTable.tableName
+                BOOKS_TABLE_NAME: booksTable.tableName,
+                TRANS_TABLE_NAME: transTable.tableName
             }
         });
 
         booksTable.grantReadWriteData(budgetLambda);
         usersTable.grantReadWriteData(budgetLambda);
-        
-        budgetLambda.addEnvironment('USERSTABLE', props.userTable);
-        budgetLambda.addEnvironment('BOOKSTABLE', props.booksTable);
+        transTable.grantReadWriteData(budgetLambda);
+
+        // budgetLambda.addEnvironment('USERSTABLE', props.userTable);
+        // budgetLambda.addEnvironment('BOOKSTABLE', props.booksTable);
+        // budgetLambda.addEnvironment('TRANSTABLE', props.transactionTable);
 
         const lambdaDs = this.sourceApi.addLambdaDataSource('lambdaDatasource', budgetLambda);
 
@@ -53,6 +56,15 @@ export class BudgetService extends Construct {
             fieldName: "getTimes"
         });
 
+        lambdaDs.createResolver("queryGetTransaction", {
+          typeName: "Query",
+          fieldName: "getTransaction"
+      });
+
+        lambdaDs.createResolver("mutationPostTransaction", {
+            typeName: "Mutation",
+            fieldName: "postTransaction"
+        })
         
 
         // const booksDS = sourceApi.addDynamoDbDataSource('bookDataSource', booksTable);

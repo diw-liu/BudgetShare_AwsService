@@ -1,15 +1,15 @@
-def getTimes(dynamodb, owner, dbName):
+def getTimes(dynamodb, username, dbName):
     response = dynamodb.query(
         TableName = dbName,
-        KeyConditionExpression = '#Owner = :OwnerInput',
         ExpressionAttributeValues = {
-            ':OwnerInput': {'S': owner}
+            ':Master': {'S': username}
         },
         ExpressionAttributeNames = {
             '#Time' : 'Time',
-            '#Owner' : 'Owner'
+            '#Master' : 'Master'
         },
+        KeyConditionExpression = '#Master = :Master',
         ProjectionExpression = '#Time'
     )
-    data = [item['Time']['S'] for item in response['Items']]
-    return data
+    # data = [item['Time']['S'] for item in response['Items']]
+    return response
