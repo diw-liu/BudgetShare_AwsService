@@ -11,17 +11,17 @@ export class BudgetDynamo extends Construct{
         super(scope,id);
 
         const booksTable = new dynamodb.Table(this, 'BooksTable', {
-            partitionKey: { name: 'Master', type: dynamodb.AttributeType.STRING },
-            sortKey: {name: "Time", type: dynamodb.AttributeType.STRING}
+            partitionKey: { name: 'UserId', type: dynamodb.AttributeType.STRING },
+            sortKey: {name: "BookId", type: dynamodb.AttributeType.STRING}
         });
 
         const usersTable = new dynamodb.Table(this, 'UsersTable', {
-            partitionKey: {name: "Username", type:dynamodb.AttributeType.STRING }
+            partitionKey: {name: "UserId", type:dynamodb.AttributeType.STRING }
         })
 
         const transactionTable = new dynamodb.Table(this, 'TransactionTable', {
             partitionKey: {name: "BookId", type:dynamodb.AttributeType.STRING },
-            sortKey: {name: "Time", type: dynamodb.AttributeType.STRING}
+            sortKey: {name: "TransactionId", type: dynamodb.AttributeType.STRING}
         })
 
         this.booksTableName = booksTable.tableName;

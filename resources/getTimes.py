@@ -1,15 +1,17 @@
-def getTimes(dynamodb, username, dbName):
+def getTimes(dynamodb, event, dbName):
     response = dynamodb.query(
         TableName = dbName,
         ExpressionAttributeValues = {
-            ':Master': {'S': username}
+            ':UserId': {'S': event['identity']['claims']['sub']}
         },
         ExpressionAttributeNames = {
-            '#Time' : 'Time',
-            '#Master' : 'Master'
+            '#UserId' : 'UserId',
+            '#BookId' : 'BookId',
+            '#Title' : 'Title',
+            '#CreatedTime' : 'CreatedTime'
         },
-        KeyConditionExpression = '#Master = :Master',
-        ProjectionExpression = '#Time'
+        KeyConditionExpression = '#UserId = :UserId',
+        ProjectionExpression = '#BookId, #Title, #CreatedTime'
     )
     # data = [item['Time']['S'] for item in response['Items']]
     return response

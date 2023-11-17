@@ -9,10 +9,12 @@ export class BudgetServiceStack extends cdk.Stack {
     super(scope, id, props);
 
     const budgetDynamo = new budget_dynamo.BudgetDynamo(this, 'BudgetDynamo');
-    const budgetUserpool = new budget_userpool.BudgetUserpool(this, 'BudgetUserpoolService', {
+
+    const budgetUserpool = new budget_userpool.BudgetUserpool(this, 'BudgetCognito', {
         userTable: budgetDynamo.usersTableName,
         booksTable: budgetDynamo.booksTableName
     });
+
     const budgetService = new budget_service.BudgetService(this, 'Budget', {
         userTable: budgetDynamo.usersTableName,
         booksTable: budgetDynamo.booksTableName,
@@ -29,7 +31,7 @@ export class BudgetServiceStack extends cdk.Stack {
     })
 
     new cdk.CfnOutput(this, "BudgetAppSync", {
-      value: budgetService.sourceApi.graphqlUrl
+      value: budgetService.api.graphqlUrl
     });
 
   }

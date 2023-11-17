@@ -1,6 +1,7 @@
 import boto3
 import os
 import time 
+import uuid
 
 client = boto3.client('cognito-idp')
 dynamodb = boto3.client('dynamodb')
@@ -17,24 +18,42 @@ def signup_handler(event, context):
     return event
 
 def postcon_handler(event, context):
+    id = event['request']['userAttributes']['sub']
     try:
         response = dynamodb.put_item(
             TableName= os.getenv("USERS_TABLE_NAME"),
             Item={
-                'UserName' : {
-                    'S' : event['userName']
+                'UserId': {
+                    'S' : id
                 }, 
+                'Username': {
+                    'S' : event['userName']
+                },
+                'Name' : {
+                    'S' : event['request']['userAttributes']['name']
+                }
             }
         )
         if(response['ResponseMetadata']['HTTPStatusCode'] == 200):
+            bookId = str(uuid.uuid4())
             response = dynamodb.put_item(
                 TableName = os.getenv("BOOKS_TABLE_NAME"),
+                ConditionExpression = "attribute_not_exists(PK)",
                 Item = {
-                    'Owner' : {
-                        'S' : event['userName']
+                    'UserId' : {
+                        'S' : id
                     },
-                    'Time' : {
-                        'S' : time.strftime("%Y-%m") 
+                    'BookId' : {
+                        'S' : bookId
+                    },
+                    'Title' : {
+                        'S' : "Untitled"
+                    },
+                    'CreatedTime': {
+                        'S' : time.strftime("%Y-%m-%d %H:%M:%S")
+                    },
+                    'UpdatedTime': {
+                        'S' : time.strftime("%Y-%m-%d %H:%M:%S")
                     }
                 }
             )

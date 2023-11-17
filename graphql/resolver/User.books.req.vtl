@@ -1,0 +1,15 @@
+{
+    "version" : "2017-02-28",
+    "operation" : "Query",
+    "query" : {
+        "expression" : "#UserId = :UserId",
+        "expressionNames" : {
+            "#UserId" : "UserId"
+        },
+        "expressionValues" : {
+            ":UserId" : {
+              "S" : "${context.identity.sub}"
+            }
+        }
+    }
+}

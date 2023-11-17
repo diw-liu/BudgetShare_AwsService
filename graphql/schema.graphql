@@ -1,37 +1,47 @@
 type User {
-    Username: String!
-    Friends: [String!]
-}
-type Book {
-    Master: String!
-    Time: String!
-    Editors: [String!]
-}
-type TimesOutput{
-  Time: String!
-}
-type TransactionOutput {
-    Time: String!
-    CatergoryId: String!
-    Title: String!
-    Amount: String!
-    Description: String!
+    UserId: String!
+    Username: String
+    Name: String
+    Books: [Book]
 }
 
-input TransactionInput {
+type Book {
+    UserId: String!
+    BookId: String
+    CreatedTime: String
+    Title: String
+}
+
+type Transaction {
     BookId: String!
-    Time: String!
-    CatergoryId: String!
+    TransactionId: String!
+    UserId: String!
     Title: String!
-    Amount: String!
+    Amount: Int!
+    Catergory: String!
     Description: String!
+    CreatedTime: String!
+    UpdatedTime: String!
+    LastChangeBy: User
+    IsApproved: Boolean
 }
 
 type Query {
-    getTimes: [TimesOutput]
-    getTransaction(bookId: String!): [TransactionOutput]
+    getUser: User
+    getTransactions(BookId: String!): [Transaction]
 }
 
 type Mutation {
     postTransaction(transaction: TransactionInput!): String!
+}
+
+input TransactionInput {
+    BookId: String!
+    TransactionId: ID
+    Title: String!
+    Amount: Int!
+    Catergory: String!
+    Description: String!
+    CreatedTime: AWSDateTime
+    UpdatedTime: AWSDateTime
 }

@@ -22,7 +22,7 @@ def lambda_handler(event, context):
     #     return respond(ValueError('Unsupported method "{}"'.format(method))) 
     res = {}      
     if method == 'getTimes':
-        res = getTimes(dynamodb, event['identity']['username'], os.getenv("BOOKS_TABLE_NAME"))
+        res = getTimes(dynamodb, event, os.getenv("BOOKS_TABLE_NAME"))
     elif method == 'postTransaction':
         res = postTransaction(dynamodb, event['identity']['username'], os.getenv("TRANS_TABLE_NAME"), event['arguments'])
     elif method == 'getTransaction':

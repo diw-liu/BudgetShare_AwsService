@@ -6,12 +6,11 @@ import * as appsync from 'aws-cdk-lib/aws-appsync';
 import path from "path";
 
 export class BudgetService extends Construct {
-    public readonly sourceApi: appsync.GraphqlApi;
-
+    public readonly api: appsync.GraphqlApi;
     constructor(scope: Construct, id: string, props: any){
         super(scope, id);
 
-        this.sourceApi = new appsync.GraphqlApi(this, 'Budget_API', {
+        this.api = new appsync.GraphqlApi(this, 'Budget_API', {
             name: 'Budget',
             definition: appsync.Definition.fromFile('graphql/schema.graphql'),
             authorizationConfig: {
@@ -29,42 +28,68 @@ export class BudgetService extends Construct {
         const booksTable = dynamodb.Table.fromTableName(this, 'BooksTable', props.booksTable);
         const transTable = dynamodb.Table.fromTableName(this, 'TransTable', props.transactionTable);
 
-        const budgetLambda = new lambda.Function(this, 'BudgetSyncHandler', {
-            runtime: lambda.Runtime.PYTHON_3_10,
-            handler: 'main.lambda_handler',
-            code: lambda.Code.fromAsset('resources'),
-            memorySize: 1024,
-            environment: {
-                USERS_TABLE_NAME: usersTable.tableName,
-                BOOKS_TABLE_NAME: booksTable.tableName,
-                TRANS_TABLE_NAME: transTable.tableName
-            }
-        });
-
-        booksTable.grantReadWriteData(budgetLambda);
-        usersTable.grantReadWriteData(budgetLambda);
-        transTable.grantReadWriteData(budgetLambda);
-
-        // budgetLambda.addEnvironment('USERSTABLE', props.userTable);
-        // budgetLambda.addEnvironment('BOOKSTABLE', props.booksTable);
-        // budgetLambda.addEnvironment('TRANSTABLE', props.transactionTable);
-
-        const lambdaDs = this.sourceApi.addLambdaDataSource('lambdaDatasource', budgetLambda);
-
-        lambdaDs.createResolver("queryGetTimes", {
-            typeName: "Query",
-            fieldName: "getTimes"
-        });
-
-        lambdaDs.createResolver("queryGetTransaction", {
-          typeName: "Query",
-          fieldName: "getTransaction"
-      });
-
-        lambdaDs.createResolver("mutationPostTransaction", {
-            typeName: "Mutation",
-            fieldName: "postTransaction"
+        const userDS = this.api.addDynamoDbDataSource('userDataSource', usersTable);        
+        
+        userDS.createResolver('QueryGetUserResovler', {
+          typeName: 'Query',
+          fieldName: 'getUser',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Query.getUser.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Query.getUser.res.vtl'),
         })
+
+        const bookDS = this.api.addDynamoDbDataSource('bookDataSource', booksTable);
+
+        bookDS.createResolver('HierchUserBooksResolver', {
+          typeName: 'User',
+          fieldName: 'Books',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/User.books.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/User.books.res.vtl'),
+        })
+        
+        const transDS = this.api.addDynamoDbDataSource('transDataSource', transTable);
+
+        transDS.createResolver('MutationPostTransResolver', {
+          typeName: 'Mutation',
+          fieldName: 'postTransaction',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.postTransaction.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.postTransaction.res.vtl'),
+        })
+        // const budgetLambda = new lambda.Function(this, 'BudgetSyncHandler', {
+        //     runtime: lambda.Runtime.PYTHON_3_10,
+        //     handler: 'main.lambda_handler',
+        //     code: lambda.Code.fromAsset('resources'),
+        //     memorySize: 1024,
+        //     environment: {
+        //         USERS_TABLE_NAME: usersTable.tableName,
+        //         BOOKS_TABLE_NAME: booksTable.tableName,
+        //         TRANS_TABLE_NAME: transTable.tableName
+        //     }
+        // });
+
+        // booksTable.grantReadWriteData(budgetLambda);
+        // usersTable.grantReadWriteData(budgetLambda);
+        // transTable.grantReadWriteData(budgetLambda);
+
+        // // budgetLambda.addEnvironment('USERSTABLE', props.userTable);
+        // // budgetLambda.addEnvironment('BOOKSTABLE', props.booksTable);
+        // // budgetLambda.addEnvironment('TRANSTABLE', props.transactionTable);
+
+        // const lambdaDs = this.sourceApi.addLambdaDataSource('lambdaDatasource', budgetLambda);
+
+        // lambdaDs.createResolver("queryGetTimes", {
+        //     typeName: "Query",
+        //     fieldName: "getTimes"
+        // });
+
+        // lambdaDs.createResolver("queryGetTransaction", {
+        //   typeName: "Query",
+        //   fieldName: "getTransaction"
+        // });
+
+        // lambdaDs.createResolver("mutationPostTransaction", {
+        //     typeName: "Mutation",
+        //     fieldName: "postTransaction"
+        // })
         
 
         // const booksDS = sourceApi.addDynamoDbDataSource('bookDataSource', booksTable);
