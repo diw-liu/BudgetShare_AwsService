@@ -1,0 +1,15 @@
+{
+    "version" : "2017-02-28",
+    "operation" : "Query",
+    "query" : {
+        "expression" : "#BookId  = :BookId",
+        "expressionNames" : {
+            "#BookId" : "BookId"
+        },
+        "expressionValues" : {
+            ":BookId" : {
+              "S" : "${context.arguments.input}"
+            }
+        }
+    },
+}

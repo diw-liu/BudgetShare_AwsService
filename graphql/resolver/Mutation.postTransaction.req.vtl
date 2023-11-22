@@ -1,14 +1,34 @@
+#set($time = $util.time.nowISO8601())
+#set($transId = $util.autoId())
+
+#set($attribs = $util.dynamodb.toMapValues($ctx.args.input))
+#set($attribs.TransactionId = $util.dynamodb.toDynamoDB($transId))
+#set($attribs.UserId = $util.dynamodb.toDynamoDB($context.identity.sub))
+#set($attribs.CreatedTime = $util.dynamodb.toDynamoDB($time))
+#set($attribs.UpdatedTime = $util.dynamodb.toDynamoDB($time))
+#set($attribs.LastChangeBy = $util.dynamodb.toDynamoDB($context.identity.sub))
+
+#if($attribs.OwnerId == $attribs.UserId)
+  #set($attribs.IsApproved = $util.dynamodb.toDynamoDB(true))
+#else
+  #set($attribs.IsApproved = $util.dynamodb.toDynamoDB(false))
+#end
+
+$util.qr($attribs.remove("OwnerId"))
+
 {
   "version": "2017-02-28",
   "operation": "PutItem",
   "key": {
-    "id": $util.dynamodb.toDynamoDBJson($util.autoId()),
+    "BookId" : $util.dynamodb.toDynamoDBJson($ctx.args.input.BookId),
+    "TransactionId" : $util.dynamodb.toDynamoDBJson($transId)
   },
-  "attributeValues": $util.dynamodb.toMapValuesJson($ctx.args.input),
+  "attributeValues": $util.toJson($attribs),
   "condition": {
-    "expression": "attribute_not_exists(#id)",
+    "expression": "attribute_not_exists(#BookId) AND attribute_not_exists(#TransactionId)",
     "expressionNames": {
-      "#id": "id",
-    },
-  },
+      "#BookId": "BookId",
+      "#TransactionId": "TransactionId",
+    }
+  }
 }

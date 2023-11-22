@@ -28,15 +28,16 @@ type Transaction {
 
 type Query {
     getUser: User
-    getTransactions(BookId: String!): [Transaction]
+    getTransactions(input: String!): [Transaction]
 }
 
 type Mutation {
-    postTransaction(transaction: TransactionInput!): String!
+    postTransaction(input: TransactionInput!): String!
 }
 
 input TransactionInput {
     BookId: String!
+    OwnerId: String!
     TransactionId: ID
     Title: String!
     Amount: Int!
@@ -45,3 +46,9 @@ input TransactionInput {
     CreatedTime: AWSDateTime
     UpdatedTime: AWSDateTime
 }
+
+#set($attribs.IsApproved = false)
+#if($attribs.OwnerId == $context.identity.sub)
+  #set($attribs.IsApproved = true)
+#end
+#
