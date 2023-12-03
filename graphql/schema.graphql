@@ -26,6 +26,16 @@ type Transaction {
     IsApproved: Boolean
 }
 
+type Friend {
+    UserId: String!
+    FriendId: String!
+    Status: StateType!
+    ConversationId: String
+    CreatedTime: AWSDateTime
+    UpdatedTime: AWSDateTime
+    UserInfo: User
+}
+
 type Query {
     getUser: User
     getTransactions(input: String!): [Transaction]
@@ -33,6 +43,13 @@ type Query {
 
 type Mutation {
     postTransaction(input: TransactionInput!): String!
+    addFriend(input: FriendInput!): Friend!
+    approveFriend(friendId: String!): Friend!
+    deleteFriend(friendId: String!): Friend!
+}
+
+type Subscription {
+    onAddFriend(UserId: String!): Friend @aws_subscribe(mutations: ["addFriend"])
 }
 
 input TransactionInput {
@@ -47,8 +64,16 @@ input TransactionInput {
     UpdatedTime: AWSDateTime
 }
 
-#set($attribs.IsApproved = false)
-#if($attribs.OwnerId == $context.identity.sub)
-  #set($attribs.IsApproved = true)
-#end
-#
+input FriendInput {
+    UserId: String
+    FriendId: String!
+    Status: StateType!
+    CreatedTime: AWSDateTime
+    UpdatedTime: AWSDateTime
+}
+
+enum StateType {
+  REQUESTED
+  PENDING
+  FRIENDS
+}

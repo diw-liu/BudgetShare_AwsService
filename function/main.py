@@ -1,6 +1,6 @@
-from getTimes import getTimes
+from service.function.getTimes import getTimes
 from postTransaction import postTransaction
-from getTransaction import getTransaction
+from service.function.getTransaction import getTransaction
 from helper import respond
 import os
 import boto3

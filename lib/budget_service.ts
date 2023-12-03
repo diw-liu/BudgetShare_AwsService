@@ -12,6 +12,7 @@ export class BudgetService extends Construct {
         super(scope, id);
 
         const logConfig: appsync.LogConfig = {
+          fieldLogLevel: appsync.FieldLogLevel.ALL,
           retention: logs.RetentionDays.ONE_WEEK,
         };
 
@@ -33,7 +34,7 @@ export class BudgetService extends Construct {
         const usersTable = dynamodb.Table.fromTableName(this, 'UsersTable', props.userTable);
         const booksTable = dynamodb.Table.fromTableName(this, 'BooksTable', props.booksTable);
         const transTable = dynamodb.Table.fromTableName(this, 'TransTable', props.transactionTable);
-        const friendsTable = dynamodb.Table.fromTableName(this, 'FriendsTable', props.isFriendsTable);
+        const friendsTable = dynamodb.Table.fromTableName(this, 'FriendsTable', props.friendsTable);
 
         const userDS = this.api.addDynamoDbDataSource('userDataSource', usersTable);        
         
@@ -42,6 +43,13 @@ export class BudgetService extends Construct {
           fieldName: 'getUser',
           requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Query.getUser.req.vtl'),
           responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Query.getUser.res.vtl'),
+        })
+
+        userDS.createResolver('HierchFriendUserinfoResolver', {
+          typeName: 'Friend',
+          fieldName: 'UserInfo',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Friend.userInfo.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Friend.userInfo.res.vtl'),
         })
 
         const bookDS = this.api.addDynamoDbDataSource('bookDataSource', booksTable);
@@ -71,12 +79,21 @@ export class BudgetService extends Construct {
 
         const friendDS = this.api.addDynamoDbDataSource('friendDataSource', friendsTable)
 
-        // friendDS.createResolver('MutationPostTransResolver', {
-        //   typeName: 'Mutation',
-        //   fieldName: 'addFriend',
-        //   requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.addFriend.req.vtl'),
-        //   responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.addFriend.res.vtl'),
-        // })
+        friendDS.createResolver('MutationAddFriendResolver', {
+          typeName: 'Mutation',
+          fieldName: 'addFriend',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.addFriend.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.addFriend.res.vtl'),
+        })
+
+        const subscription = this.api.addNoneDataSource('subscriptionDataSource')
+        
+        subscription.createResolver('SubscriptionAddFriendResolver', {
+          typeName: 'Subscription',
+          fieldName: 'onAddFriend',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.onAddFriend.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.onAddFriend.res.vtl'),
+        })
 
         // const budgetLambda = new lambda.Function(this, 'BudgetSyncHandler', {
         //     runtime: lambda.Runtime.PYTHON_3_10,

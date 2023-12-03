@@ -1,0 +1,19 @@
+$extensions.setSubscriptionFilter({
+  "filterGroup": [
+    {
+      "filters" : [
+        {
+          "fieldName" : "FriendId",
+          "operator" : "eq",
+          "value" : $context.arguments.UserId
+        },
+        {
+          "fieldName" : "Status",
+          "operator" : "eq",
+          "value" : "REQUESTED"
+        }
+      ]
+    }
+  ]
+})
+$util.toJson($ctx.result)

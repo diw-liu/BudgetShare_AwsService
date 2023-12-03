@@ -1,0 +1,23 @@
+#set($time = $util.time.nowISO8601())
+
+#set($attribs = $util.dynamodb.toMapValues($ctx.args.input))
+#set($attribs.UserId = $util.dynamodb.toDynamoDB($context.identity.sub))
+#set($attribs.CreatedTime = $util.dynamodb.toDynamoDB($time))
+#set($attribs.UpdatedTime = $util.dynamodb.toDynamoDB($time))
+
+{
+  "version": "2017-02-28",
+  "operation": "PutItem",
+  "key": {
+    "UserId" : $util.dynamodb.toDynamoDBJson($context.identity.sub),
+    "FriendId" : $util.dynamodb.toDynamoDBJson($ctx.args.input.FriendId)
+  },
+  "attributeValues": $util.toJson($attribs),
+  "condition": {
+    "expression": "attribute_not_exists(#UserId) AND attribute_not_exists(#FriendId)",
+    "expressionNames": {
+      "#UserId": "UserId",
+      "#FriendId": "FriendId",
+    }
+  }
+}

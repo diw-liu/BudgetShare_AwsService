@@ -19,7 +19,7 @@ export class BudgetServiceStack extends cdk.Stack {
         userTable: budgetDynamo.usersTableName,
         booksTable: budgetDynamo.booksTableName,
         transactionTable: budgetDynamo.transTableName,
-        isFriendsTable: budgetDynamo.friedTableName,
+        friendsTable: budgetDynamo.friedTableName,
         userpool: budgetUserpool.userpool
     });
     
