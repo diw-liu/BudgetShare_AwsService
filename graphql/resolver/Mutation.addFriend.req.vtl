@@ -1,16 +1,18 @@
 #set($time = $util.time.nowISO8601())
 
 #set($attribs = $util.dynamodb.toMapValues($ctx.args.input))
-#set($attribs.UserId = $util.dynamodb.toDynamoDB($context.identity.sub))
 #set($attribs.CreatedTime = $util.dynamodb.toDynamoDB($time))
 #set($attribs.UpdatedTime = $util.dynamodb.toDynamoDB($time))
+#if($util.isNullOrEmpty($attribs.UserId))
+  #set($attribs.UserId = $util.dynamodb.toDynamoDB($context.identity.sub))
+#end
 
 {
   "version": "2017-02-28",
   "operation": "PutItem",
   "key": {
-    "UserId" : $util.dynamodb.toDynamoDBJson($context.identity.sub),
-    "FriendId" : $util.dynamodb.toDynamoDBJson($ctx.args.input.FriendId)
+    "UserId": $util.toJson($attribs.UserId),
+    "FriendId": $util.toJson($attribs.FriendId),
   },
   "attributeValues": $util.toJson($attribs),
   "condition": {

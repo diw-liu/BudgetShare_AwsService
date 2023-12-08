@@ -1,11 +1,11 @@
-type User {
+type User @aws_iam @aws_cognito_user_pools{
     UserId: String!
     Username: String
     Name: String
     Books: [Book]
 }
 
-type Book {
+type Book @aws_cognito_user_pools{
     UserId: String!
     BookId: String
     CreatedTime: String
@@ -26,7 +26,7 @@ type Transaction {
     IsApproved: Boolean
 }
 
-type Friend {
+type Friend @aws_iam @aws_cognito_user_pools{
     UserId: String
     FriendId: String!
     Status: StateType
@@ -43,13 +43,13 @@ type Query {
 
 type Mutation {
     postTransaction(input: TransactionInput!): String!
-    addFriend(input: FriendInput!): Friend!
+    addFriend(input: FriendInput!): Friend! @aws_iam @aws_cognito_user_pools
     approveFriend(friendId: String!): Friend!
     deleteFriend(friendId: String!): Friend!
 }
 
 type Subscription {
-    onAddFriend(FriendId: String!): Friend @aws_subscribe(mutations: ["addFriend"])
+    onAddFriend(FriendId: String!): Friend @aws_subscribe(mutations: ["addFriend"]) @aws_cognito_user_pools
 }
 
 input TransactionInput {

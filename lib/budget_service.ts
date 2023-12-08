@@ -1,10 +1,12 @@
 import { Construct } from "constructs";
 import * as cdk from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb"
 import * as appsync from 'aws-cdk-lib/aws-appsync';
 import path from "path";
 import * as logs from 'aws-cdk-lib/aws-logs';
+import { DynamoEventSource, StreamEventSourceProps } from "aws-cdk-lib/aws-lambda-event-sources";
 
 export class BudgetService extends Construct {
     public readonly api: appsync.GraphqlApi;
@@ -26,7 +28,13 @@ export class BudgetService extends Construct {
                     userPool: props.userpool
                 }
               },
+              additionalAuthorizationModes: [
+                {
+                  authorizationType: appsync.AuthorizationType.IAM,
+                }
+              ]
             },
+            // try adding @
             logConfig,
             xrayEnabled: true,
         });
@@ -34,7 +42,12 @@ export class BudgetService extends Construct {
         const usersTable = dynamodb.Table.fromTableName(this, 'UsersTable', props.userTable);
         const booksTable = dynamodb.Table.fromTableName(this, 'BooksTable', props.booksTable);
         const transTable = dynamodb.Table.fromTableName(this, 'TransTable', props.transactionTable);
-        const friendsTable = dynamodb.Table.fromTableName(this, 'FriendsTable', props.friendsTable);
+        
+        const friendsTable = new dynamodb.Table(this, 'FriendsTable', {
+          partitionKey: {name: "UserId", type:dynamodb.AttributeType.STRING },
+          sortKey: {name: "FriendId", type: dynamodb.AttributeType.STRING},
+          stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
+        })
 
         const userDS = this.api.addDynamoDbDataSource('userDataSource', usersTable);        
         
@@ -94,6 +107,49 @@ export class BudgetService extends Construct {
           requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.onAddFriend.req.vtl'),
           responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.onAddFriend.res.vtl'),
         })
+
+        const appsyncLayer = new lambda.LayerVersion(this, 'AppSyncLayer', {
+          code: lambda.Code.fromAsset('resources/utils'),
+        });
+
+        const requestStateHandler = new lambda.Function(this, "RequestStateHandler", {
+          runtime: lambda.Runtime.PYTHON_3_10,
+          handler: 'requestState.lambda_handler',
+          code: lambda.Code.fromAsset('resources/lambdas'),
+          memorySize: 1024,
+          environment: {
+            APPSYNC_URL: this.api.graphqlUrl,
+            MODE: JSON.stringify(this.api.modes)
+          },
+          layers: [appsyncLayer]
+        })
+        
+        this.api.grant(requestStateHandler, appsync.IamResource.ofType('Mutation', 'addFriend'), 'appsync:GraphQL');
+        this.api.grant(requestStateHandler, appsync.IamResource.ofType('Friend', 'userInfo'), 'appsync:GraphQL');
+        
+        const streamEventSourceProps: StreamEventSourceProps = {
+          startingPosition: lambda.StartingPosition.LATEST,
+          batchSize: 5,
+          retryAttempts: 1,
+          reportBatchItemFailures: true,
+        };
+
+        requestStateHandler.addEventSource(
+          new DynamoEventSource(friendsTable, {
+            // define filters here
+            filters: [
+              lambda.FilterCriteria.filter({
+                eventName: lambda.FilterRule.isEqual('INSERT'),
+                dynamodb: {
+                  NewImage: {
+                    Status: { S: ["REQUESTED"]},
+                  },
+                },
+              }),
+            ],
+            ...streamEventSourceProps
+          })
+        );
 
         // const budgetLambda = new lambda.Function(this, 'BudgetSyncHandler', {
         //     runtime: lambda.Runtime.PYTHON_3_10,
