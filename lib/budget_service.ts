@@ -39,15 +39,16 @@ export class BudgetService extends Construct {
             xrayEnabled: true,
         });
 
-        const usersTable = dynamodb.Table.fromTableName(this, 'UsersTable', props.userTable);
-        const booksTable = dynamodb.Table.fromTableName(this, 'BooksTable', props.booksTable);
-        const transTable = dynamodb.Table.fromTableName(this, 'TransTable', props.transactionTable);
-        
-        const friendsTable = new dynamodb.Table(this, 'FriendsTable', {
-          partitionKey: {name: "UserId", type:dynamodb.AttributeType.STRING },
-          sortKey: {name: "FriendId", type: dynamodb.AttributeType.STRING},
-          stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
-        })
+        const booksTable = props.booksTable;
+        const usersTable = props.usersTable;
+        const transTable = props.transTable;
+        const friendsTable = props.friendsTable;
+
+        // const friendsTable = new dynamodb.Table(this, 'FriendsTable', {
+        //   partitionKey: {name: "UserId", type:dynamodb.AttributeType.STRING },
+        //   sortKey: {name: "FriendId", type: dynamodb.AttributeType.STRING},
+        //   stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
+        // })
 
         const userDS = this.api.addDynamoDbDataSource('userDataSource', usersTable);        
         
@@ -99,6 +100,20 @@ export class BudgetService extends Construct {
           responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.addFriend.res.vtl'),
         })
 
+        friendDS.createResolver('MutationApproveFriendResolver', {
+          typeName: 'Mutation',
+          fieldName: 'approveFriend',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.approveFriend.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.approveFriend.res.vtl'),
+        })
+
+        friendDS.createResolver('MutationDeleteFriendResolver', {
+          typeName: 'Mutation',
+          fieldName: 'deleteFriend',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.deleteFriend.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.deleteFriend.res.vtl'),
+        })
+
         const subscription = this.api.addNoneDataSource('subscriptionDataSource')
         
         subscription.createResolver('SubscriptionAddFriendResolver', {
@@ -112,9 +127,9 @@ export class BudgetService extends Construct {
           code: lambda.Code.fromAsset('resources/utils'),
         });
 
-        const requestStateHandler = new lambda.Function(this, "RequestStateHandler", {
+        const friendEventHandler = new lambda.Function(this, "RequestStateHandler", {
           runtime: lambda.Runtime.PYTHON_3_10,
-          handler: 'requestState.lambda_handler',
+          handler: 'friendEventHandler.lambda_handler',
           code: lambda.Code.fromAsset('resources/lambdas'),
           memorySize: 1024,
           environment: {
@@ -124,8 +139,9 @@ export class BudgetService extends Construct {
           layers: [appsyncLayer]
         })
         
-        this.api.grant(requestStateHandler, appsync.IamResource.ofType('Mutation', 'addFriend'), 'appsync:GraphQL');
-        this.api.grant(requestStateHandler, appsync.IamResource.ofType('Friend', 'userInfo'), 'appsync:GraphQL');
+        this.api.grant(friendEventHandler, appsync.IamResource.ofType('Mutation', 'addFriend'), 'appsync:GraphQL');
+        this.api.grant(friendEventHandler, appsync.IamResource.ofType('Mutation', 'approveFriend'), 'appsync:GraphQL');
+        this.api.grant(friendEventHandler, appsync.IamResource.ofType('Friend', 'userInfo'), 'appsync:GraphQL');
         
         const streamEventSourceProps: StreamEventSourceProps = {
           startingPosition: lambda.StartingPosition.LATEST,
@@ -134,7 +150,7 @@ export class BudgetService extends Construct {
           reportBatchItemFailures: true,
         };
 
-        requestStateHandler.addEventSource(
+        friendEventHandler.addEventSource(
           new DynamoEventSource(friendsTable, {
             // define filters here
             filters: [
@@ -143,6 +159,14 @@ export class BudgetService extends Construct {
                 dynamodb: {
                   NewImage: {
                     Status: { S: ["REQUESTED"]},
+                  },
+                },
+              }),
+              lambda.FilterCriteria.filter({
+                eventName: lambda.FilterRule.isEqual('MODIFY'),
+                dynamodb: {
+                  OldImage: {
+                    Status: { S: [{"anything-but": ["FRIENDS"]}]},
                   },
                 },
               }),

@@ -6,10 +6,10 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 // import { FilterCriteria, FilterRule, StartingPosition } from "aws-cdk-lib/aws-lambda";
 
 export class BudgetDynamo extends Construct{
-    public readonly booksTableName: String;
-    public readonly usersTableName: String;
-    public readonly transTableName: String;
-    public readonly friendsTableName: String;
+    public readonly booksTable: cdk.aws_dynamodb.Table;
+    public readonly usersTable: cdk.aws_dynamodb.Table;
+    public readonly transTable: cdk.aws_dynamodb.Table;
+    public readonly friendsTable: cdk.aws_dynamodb.Table;
 
     constructor(scope:Construct, id:string){
         super(scope,id);
@@ -28,7 +28,11 @@ export class BudgetDynamo extends Construct{
             sortKey: {name: "TransactionId", type: dynamodb.AttributeType.STRING}
         })
 
-        
+        const friendsTable = new dynamodb.Table(this, 'FriendsTable', {
+          partitionKey: {name: "UserId", type:dynamodb.AttributeType.STRING },
+          sortKey: {name: "FriendId", type: dynamodb.AttributeType.STRING},
+          stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
+        })
 
         // const streamEventSourceProps: StreamEventSourceProps = {
         //   startingPosition: StartingPosition.LATEST,
@@ -38,10 +42,10 @@ export class BudgetDynamo extends Construct{
         //   reportBatchItemFailures: true,
         // };
         
-        this.booksTableName = booksTable.tableName;
-        this.usersTableName = usersTable.tableName;
-        this.transTableName = transactionTable.tableName;
-        //this.friendsTableName = friendsTable.tableName;
+        this.booksTable = booksTable;
+        this.usersTable = usersTable;
+        this.transTable = transactionTable;
+        this.friendsTable = friendsTable;
         // new cdk.CfnOutput(this, "booksTableName", {
         //     value: booksTable.tableName,
         //     exportName: "booksTableName"

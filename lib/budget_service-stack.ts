@@ -11,15 +11,15 @@ export class BudgetServiceStack extends cdk.Stack {
     const budgetDynamo = new budget_dynamo.BudgetDynamo(this, 'BudgetDynamo');
 
     const budgetUserpool = new budget_userpool.BudgetUserpool(this, 'BudgetCognito', {
-        userTable: budgetDynamo.usersTableName,
-        booksTable: budgetDynamo.booksTableName
+        booksTable: budgetDynamo.booksTable,
+        usersTable: budgetDynamo.usersTable
     });
 
     const budgetService = new budget_service.BudgetService(this, 'Budget', {
-        userTable: budgetDynamo.usersTableName,
-        booksTable: budgetDynamo.booksTableName,
-        transactionTable: budgetDynamo.transTableName,
-        //friendsTable: budgetDynamo.friendsTableName,
+        booksTable: budgetDynamo.booksTable,
+        usersTable: budgetDynamo.usersTable,
+        transTable: budgetDynamo.transTable,
+        friendsTable: budgetDynamo.friendsTable,
         userpool: budgetUserpool.userpool
     });
     

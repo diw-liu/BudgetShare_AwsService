@@ -18,8 +18,8 @@ export class BudgetUserpool extends Construct {
       handler: "signing.signup_handler"
     })
 
-    const usersTable = dynamodb.Table.fromTableName(this, 'UsersTable', props.userTable);
-    const booksTable = dynamodb.Table.fromTableName(this, 'BooksTable', props.booksTable);
+    const booksTable = props.booksTable;
+    const usersTable = props.usersTable;
 
     const postconHandler = new lambda.Function(this, "PostconHandler", {
       runtime: lambda.Runtime.PYTHON_3_7,

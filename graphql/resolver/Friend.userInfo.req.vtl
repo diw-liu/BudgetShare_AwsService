@@ -1,7 +1,11 @@
+#set($friendId = $ctx.source.FriendId )
+#if($util.isNullOrEmpty($ctx.source.FriendId))
+	#set($friendId = $ctx.source.UserId )
+#end
 {
     "version" : "2017-02-28",
     "operation" : "GetItem",
     "key" : {
-      "UserId" : $util.dynamodb.toDynamoDBJson($ctx.source.FriendId)
+      "UserId" : $util.dynamodb.toDynamoDBJson($friendId)
     }
 }

@@ -1,0 +1,40 @@
+#set($time = $util.time.nowISO8601())
+#set($conversationId = $ctx.args.input.ConversationId)
+#set($userId = $ctx.args.input.UserId)
+
+#if($util.isNullOrEmpty($userId))
+  #set($userId = $context.identity.sub)
+#end
+
+#if($util.isNullOrEmpty($conversationId))
+  #set($conversationId = $util.autoId())
+#end
+{
+    "version" : "2017-02-28",
+    "operation" : "UpdateItem",
+    "key" : {
+        "UserId" : $util.dynamodb.toDynamoDBJson($userId),
+        "FriendId": $util.dynamodb.toDynamoDBJson($ctx.args.input.FriendId),
+    },
+    "update" : {
+        "expression" : "SET #UpdatedTime = :UpdatedTime, #Status = :Status, #ConversationId = :ConversationId",
+        "expressionNames" : {
+            "#UpdatedTime" : "UpdatedTime",
+            "#ConversationId" : "ConversationId",
+            "#Status" : "Status"
+        },
+        "expressionValues": {
+            ":UpdatedTime" : { "S" : "${time}" },
+            ":Status" : { "S" : "FRIENDS" },
+            ":ConversationId" : { "S" : "${conversationId}" }
+        }
+    },
+    "condition" : {
+        "expression": "attribute_exists(#UserId) AND attribute_exists(#FriendId) AND attribute_not_exists(#ConversationId)",
+        "expressionNames": {
+          "#UserId": "UserId",
+          "#FriendId": "FriendId",
+          "#ConversationId": "ConversationId"
+        }
+    }
+}

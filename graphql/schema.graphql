@@ -27,8 +27,8 @@ type Transaction {
 }
 
 type Friend @aws_iam @aws_cognito_user_pools{
-    UserId: String
-    FriendId: String!
+    UserId: String!
+    FriendId: String
     Status: StateType
     ConversationId: String
     CreatedTime: AWSDateTime
@@ -44,12 +44,12 @@ type Query {
 type Mutation {
     postTransaction(input: TransactionInput!): String!
     addFriend(input: FriendInput!): Friend! @aws_iam @aws_cognito_user_pools
-    approveFriend(friendId: String!): Friend!
-    deleteFriend(friendId: String!): Friend!
+    approveFriend(input: FriendInput!): Friend! @aws_iam @aws_cognito_user_pools
+    deleteFriend(input: FriendInput!): Friend! @aws_iam @aws_cognito_user_pools
 }
 
 type Subscription {
-    onAddFriend(FriendId: String!): Friend @aws_subscribe(mutations: ["addFriend"]) @aws_cognito_user_pools
+    onAddFriend(UserId: String!): Friend @aws_subscribe(mutations: ["addFriend"]) @aws_cognito_user_pools
 }
 
 input TransactionInput {
@@ -66,10 +66,9 @@ input TransactionInput {
 
 input FriendInput {
     UserId: String
-    FriendId: String!
-    Status: StateType!
-    CreatedTime: AWSDateTime
-    UpdatedTime: AWSDateTime
+    FriendId: String!    
+    ConversationId: String
+    Status: StateType
 }
 
 enum StateType {
