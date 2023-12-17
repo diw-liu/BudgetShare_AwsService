@@ -6,6 +6,11 @@ $extensions.setSubscriptionFilter({
           "fieldName" : "ConversationId",
           "operator" : "eq",
           "value" : $context.arguments.ConversationId
+        },
+        {
+          "fieldName" : "AuthorId",
+          "operator" : "ne",
+          "value" : $context.arguments.AuthorId
         }
       ]
     }

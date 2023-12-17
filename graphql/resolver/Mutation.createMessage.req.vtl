@@ -2,6 +2,7 @@
 #set($messageId = $util.autoId())
 
 #set($attribs = $util.dynamodb.toMapValues($ctx.args.input))
+#set($attribs.AuthorId = $$util.dynamodb.toDynamoDB($context.identity.sub))
 #set($attribs.CreatedTime = $util.dynamodb.toDynamoDB($time))
 
 {

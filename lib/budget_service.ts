@@ -123,6 +123,13 @@ export class BudgetService extends Construct {
 
         const messagesDS = this.api.addDynamoDbDataSource('messagesDataSource', messagesTable);
 
+        messagesDS.createResolver('QueryGetMessageResolver', {
+          typeName: 'Query',
+          fieldName: 'getMessage',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Friend.convoInfo.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Friend.convoInfo.res.vtl'),
+        })
+
         messagesDS.createResolver('MutationCreateMessageResolver', {
           typeName: 'Mutation',
           fieldName: 'createMessage',

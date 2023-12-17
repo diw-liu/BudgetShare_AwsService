@@ -35,7 +35,7 @@ type Friend @aws_iam @aws_cognito_user_pools{
     CreatedTime: AWSDateTime
     UpdatedTime: AWSDateTime
     UserInfo: User
-    ConvoInfo: [MessageConnection]
+    ConvoInfo: MessageConnection
 }
 
 type MessageConnection {
@@ -55,7 +55,7 @@ type Query {
     getUser: User
     getFriends: [Friend]
     getTransactions(input: String!): [Transaction]
-    getMessage(conversationId:String!): MessageConnection
+    getMessage(input: String!): MessageConnection
 }
 
 type Mutation {
@@ -70,12 +70,11 @@ type Subscription {
     onAddFriend(UserId: String!): Friend @aws_subscribe(mutations: ["addFriend"]) @aws_cognito_user_pools
     onApproveFriend(UserId: String!): Friend @aws_subscribe(mutations: ["approveFriend"]) @aws_cognito_user_pools
     onDeleteFriend(UserId: String!): Friend @aws_subscribe(mutations: ["deleteFriend"]) @aws_cognito_user_pools
-    onCreateMessage(ConversationId: String!): Message @aws_subscribe(mutations: ["createMessage"]) @aws_cognito_user_pools
+    onCreateMessage(ConversationId: String!, AuthorId: String!): Message @aws_subscribe(mutations: ["createMessage"]) @aws_cognito_user_pools
 }
 
 input MessageInput {
     ConversationId: String!
-    AuthorId: String!
     MessageInfo: String!
 }
 

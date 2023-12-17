@@ -7,7 +7,7 @@
             "#ConversationId" : "ConversationId"
         },
         "expressionValues" : {
-            ":ConversationId" : $util.dynamodb.toDynamoDBJson($ctx.source.ConversationId)
+            ":ConversationId" : $util.dynamodb.toDynamoDBJson($util.defaultIfNullOrBlank($ctx.args.input,$ctx.source.ConversationId))
         }
     },
     "limit": $util.defaultIfNull(${ctx.args.limit}, 20),
