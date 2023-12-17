@@ -10,6 +10,7 @@ export class BudgetDynamo extends Construct{
     public readonly usersTable: cdk.aws_dynamodb.Table;
     public readonly transTable: cdk.aws_dynamodb.Table;
     public readonly friendsTable: cdk.aws_dynamodb.Table;
+    public readonly messagesTable: cdk.aws_dynamodb.Table;
 
     constructor(scope:Construct, id:string){
         super(scope,id);
@@ -34,18 +35,16 @@ export class BudgetDynamo extends Construct{
           stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
         })
 
-        // const streamEventSourceProps: StreamEventSourceProps = {
-        //   startingPosition: StartingPosition.LATEST,
-        //   batchSize: 5,
-        //   retryAttempts: 1,
-        //   onFailure: stateHandlerDLQ,
-        //   reportBatchItemFailures: true,
-        // };
+        const messagesTable = new dynamodb.Table(this, 'MessagesTable', {
+          partitionKey: {name: "ConversationId", type:dynamodb.AttributeType.STRING },
+          sortKey: {name: "MessageId", type: dynamodb.AttributeType.STRING},
+        })
         
         this.booksTable = booksTable;
         this.usersTable = usersTable;
         this.transTable = transactionTable;
         this.friendsTable = friendsTable;
+        this.messagesTable = messagesTable;
         // new cdk.CfnOutput(this, "booksTableName", {
         //     value: booksTable.tableName,
         //     exportName: "booksTableName"

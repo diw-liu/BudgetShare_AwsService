@@ -25,16 +25,30 @@ approveFriend = """
     }
   }"""
 
+deleteFriend = """
+  mutation deleteFriend($input: FriendInput!){
+    deleteFriend(input: $input){
+      ConversationId
+      FriendId
+      UserInfo {
+        Username
+        Name
+      }
+    }
+  }"""
+
 def lambda_handler(event, context):
   print(context)
   for record in event['Records']:
     print(record)
-    item = record['dynamodb']['NewImage']
+    eventName = record['eventName']
+    item = record['dynamodb']['NewImage'] if eventName != 'REMOVE' else record['dynamodb']['OldImage']
     params = {
       'UserId': item['FriendId']['S'],
       'FriendId': item['UserId']['S'],
     }
-    eventName = record['eventName']
+    if(eventName == 'REMOVE'):
+      res = appsync.query(deleteFriend, { 'input': params })
     if(eventName == 'INSERT' and item['Status']['S'] == 'REQUESTED'):
       params['Status'] = 'PENDING'
       res = appsync.query(addFriend, { 'input': params })
@@ -42,10 +56,3 @@ def lambda_handler(event, context):
       params['Status'] = 'FRIENDS'
       params['ConversationId'] = item['ConversationId']['S']
       res = appsync.query(approveFriend, { 'input': params })
-
-    # params = {
-    #   'UserId': item['FriendId']['S'],
-    #   'FriendId': item['UserId']['S'],
-    #   'Status': 'PENDING',
-    # }
-    # res = appsync.query(addFriend, { 'input': params })

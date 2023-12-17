@@ -1,0 +1,12 @@
+#set($userId = $ctx.args.input.UserId)
+#if($util.isNullOrEmpty($userId))
+  #set($userId = $context.identity.sub)
+#end
+{
+    "version" : "2017-02-28",
+    "operation" : "DeleteItem",
+    "key" : {
+      "UserId" : $util.dynamodb.toDynamoDBJson($userId),
+      "FriendId": $util.dynamodb.toDynamoDBJson($ctx.args.input.FriendId),
+    }
+}

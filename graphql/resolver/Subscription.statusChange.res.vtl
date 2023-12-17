@@ -1,0 +1,14 @@
+$extensions.setSubscriptionFilter({
+  "filterGroup": [
+    {
+      "filters" : [
+        {
+          "fieldName" : "UserId",
+          "operator" : "eq",
+          "value" : $context.arguments.UserId
+        }
+      ]
+    }
+  ]
+})
+$util.toJson($ctx.result)

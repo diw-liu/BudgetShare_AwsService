@@ -1,0 +1,15 @@
+{
+    "version" : "2017-02-28",
+    "operation" : "Query",
+    "query" : {
+        "expression" : "#ConversationId = :ConversationId",
+        "expressionNames" : {
+            "#ConversationId" : "ConversationId"
+        },
+        "expressionValues" : {
+            ":ConversationId" : $util.dynamodb.toDynamoDBJson($ctx.source.ConversationId)
+        }
+    },
+    "limit": $util.defaultIfNull(${ctx.args.limit}, 20),
+    "nextToken": $util.toJson($util.defaultIfNullOrBlank($ctx.args.nextToken, null))
+}

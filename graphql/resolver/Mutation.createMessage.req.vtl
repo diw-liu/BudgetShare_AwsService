@@ -1,0 +1,22 @@
+#set($time = $util.time.nowISO8601())
+#set($messageId = $util.autoId())
+
+#set($attribs = $util.dynamodb.toMapValues($ctx.args.input))
+#set($attribs.CreatedTime = $util.dynamodb.toDynamoDB($time))
+
+{
+  "version": "2017-02-28",
+  "operation": "PutItem",
+  "key": {
+    "ConversationId" : $util.dynamodb.toDynamoDBJson($ctx.args.input.ConversationId),
+    "MessageId" : $util.dynamodb.toDynamoDBJson($messageId)
+  },
+  "attributeValues": $util.toJson($attribs),
+  "condition": {
+    "expression": "attribute_not_exists(#ConversationId) AND attribute_not_exists(#MessageId)",
+    "expressionNames": {
+      "#ConversationId": "ConversationId",
+      "#MessageId": "MessageId",
+    }
+  }
+}

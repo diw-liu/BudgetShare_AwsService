@@ -1,8 +1,6 @@
 import requests
-import json
 import os
 import boto3
-
 from requests_aws_sign import AWSV4Sign
 
 def query(query, variables: dict):
@@ -14,19 +12,9 @@ def query(query, variables: dict):
     headers={"Content-Type": "application/json"}
     payload = {"query": query, 'variables': variables, 'authMode': "AWS_IAM"}
 
-    print('endpoint'+endpoint)
-    print('headers')
-    print(headers)
-    print('payload')
-    print(payload)
-
     appsync_region = __parse_region_from_url(endpoint) or region
     auth=AWSV4Sign(credentials, appsync_region, 'appsync')
 
-    print('appsync_region')
-    print(appsync_region)
-    print('auth')
-    print(auth)
     try:
         response = requests.post(
             endpoint,

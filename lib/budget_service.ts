@@ -2,7 +2,6 @@ import { Construct } from "constructs";
 import * as cdk from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from "aws-cdk-lib/aws-lambda";
-import * as dynamodb from "aws-cdk-lib/aws-dynamodb"
 import * as appsync from 'aws-cdk-lib/aws-appsync';
 import path from "path";
 import * as logs from 'aws-cdk-lib/aws-logs';
@@ -43,6 +42,7 @@ export class BudgetService extends Construct {
         const usersTable = props.usersTable;
         const transTable = props.transTable;
         const friendsTable = props.friendsTable;
+        const messagesTable = props.messagesTable;
 
         // const friendsTable = new dynamodb.Table(this, 'FriendsTable', {
         //   partitionKey: {name: "UserId", type:dynamodb.AttributeType.STRING },
@@ -93,6 +93,13 @@ export class BudgetService extends Construct {
 
         const friendDS = this.api.addDynamoDbDataSource('friendDataSource', friendsTable)
 
+        friendDS.createResolver('QueryGetFriendsResolver', {
+          typeName: 'Query',
+          fieldName: 'getFriends',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Query.getFriends.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Query.getFriends.res.vtl'),
+        })
+
         friendDS.createResolver('MutationAddFriendResolver', {
           typeName: 'Mutation',
           fieldName: 'addFriend',
@@ -114,6 +121,22 @@ export class BudgetService extends Construct {
           responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.deleteFriend.res.vtl'),
         })
 
+        const messagesDS = this.api.addDynamoDbDataSource('messagesDataSource', messagesTable);
+
+        messagesDS.createResolver('MutationCreateMessageResolver', {
+          typeName: 'Mutation',
+          fieldName: 'createMessage',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.createMessage.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Mutation.createMessage.res.vtl'),
+        })
+
+        messagesDS.createResolver('HierchFriendConvResolver', {
+          typeName: 'Friend',
+          fieldName: 'ConvoInfo',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Friend.ConvoInfo.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Friend.ConvoInfo.res.vtl'),
+        })
+
         const subscription = this.api.addNoneDataSource('subscriptionDataSource')
         
         subscription.createResolver('SubscriptionAddFriendResolver', {
@@ -121,6 +144,27 @@ export class BudgetService extends Construct {
           fieldName: 'onAddFriend',
           requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.onAddFriend.req.vtl'),
           responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.onAddFriend.res.vtl'),
+        })
+
+        subscription.createResolver('SubscriptionApproveFriendResolver', {
+          typeName: 'Subscription',
+          fieldName: 'onApproveFriend',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.statusChange.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.statusChange.res.vtl'),
+        })
+
+        subscription.createResolver('SubscriptionDeleteFriendResolver', {
+          typeName: 'Subscription',
+          fieldName: 'onDeleteFriend',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.statusChange.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.statusChange.res.vtl'),
+        })
+
+        subscription.createResolver('SubscriptionCreateMessageResolver', {
+          typeName: 'Subscription',
+          fieldName: 'onCreateMessage',
+          requestMappingTemplate: appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.statusChange.req.vtl'),
+          responseMappingTemplate:  appsync.MappingTemplate.fromFile('graphql/resolver/Subscription.statusChange.res.vtl'),
         })
 
         const appsyncLayer = new lambda.LayerVersion(this, 'AppSyncLayer', {
@@ -141,6 +185,7 @@ export class BudgetService extends Construct {
         
         this.api.grant(friendEventHandler, appsync.IamResource.ofType('Mutation', 'addFriend'), 'appsync:GraphQL');
         this.api.grant(friendEventHandler, appsync.IamResource.ofType('Mutation', 'approveFriend'), 'appsync:GraphQL');
+        this.api.grant(friendEventHandler, appsync.IamResource.ofType('Mutation', 'deleteFriend'), 'appsync:GraphQL');
         this.api.grant(friendEventHandler, appsync.IamResource.ofType('Friend', 'userInfo'), 'appsync:GraphQL');
         
         const streamEventSourceProps: StreamEventSourceProps = {
@@ -169,6 +214,9 @@ export class BudgetService extends Construct {
                     Status: { S: [{"anything-but": ["FRIENDS"]}]},
                   },
                 },
+              }),
+              lambda.FilterCriteria.filter({
+                eventName: lambda.FilterRule.isEqual('REMOVE'),
               }),
             ],
             ...streamEventSourceProps
